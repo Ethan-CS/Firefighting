@@ -1,23 +1,17 @@
 # takes two lists - burned and defended at each timestep - verifies this satisfies FF conditions
-def verify_certificate(f, d, g):
-    assert len(f) == len(d), f'lists of burned ({len(f)}) and defended ({len(d)}) are different lengths'
+def verify_certificate(f, d, g, k):
+    assert len(f) <= len(d), f'lists of burned ({len(f)}) and defended ({len(d)}) are different lengths'
     i = len(f)  # time at which process terminated
 
-    # Need to that:
-    # 1. each v in di in d is neither burned nor defended at time i,
-    # 2. At time t, no undefended vertex is adjacent to a burning vertex, and
-    # 3. At least k vertices are saved at the end of time t.
+    okay_1, f_union, d_union = defences_valid(i, f, d)
+    assert len(f_union) + len(d_union) <= g.number_of_nodes(), \
+        f'{len(f_union)}+{len(d_union)} should be less than/equal to {g.number_of_nodes()}'
 
-    # (1) for each d_i in d, check each vertex in d_i neither burned nor defended
-
-    okay, f_union, d_union = defences_valid(i, f, d, g)
-    assert len(f_union) + len(d_union) == g.number_of_nodes(), f'{len(f_union)}+{len(d_union)}!={g.number_of_nodes()}'
-
-    return okay
+    return okay_1 and (no_spread_after_end(d_union, f_union, g) and k_vertices_saved(k, f_union, d_union, g))
 
 
 # (1) each v in di in d is neither burned nor defended at time i,
-def defences_valid(i, f, d, g):
+def defences_valid(i, f, d):
     f_so_far, d_so_far = [], []  # maintain a list of 'all burned so far' for each i that we add to
 
     # then just need to check each v not in burned/defended so far and i-1, which we then add to so far
@@ -36,11 +30,16 @@ def defences_valid(i, f, d, g):
 
 
 # (2) At time t, no undefended vertex is adjacent to a burning vertex
-def no_spread_after_end(i, f, d, f_union, d_union, g):
+def no_spread_after_end(f_union, d_union, g):
     unburned = list(set(g.nodes)-set(f_union).union(d_union))
     for u in unburned:
         for v in g.neighbors(u):
             if v in f_union:
                 return False
     return True
+
+
+# (3) At least k vertices are saved at the end of time t.
+def k_vertices_saved(k, f_union, d_union, g):
+    return len(d_union) + len(list(set(g.nodes)-set(f_union).union(d_union))) >= k
 
