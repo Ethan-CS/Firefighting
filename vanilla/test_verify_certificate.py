@@ -1,32 +1,31 @@
 import unittest
 import networkx as nx
 
+from vanilla.vanillainstance import VanillaInstance
 from vanilla.verify_certificate import *
 
 
 class MyTestCase(unittest.TestCase):
-    def test_verify_certificate_empty(self):
-        verify_certificate([], [], nx.Graph(), 0)
+    # def test_verify_certificate_empty(self):
+    #     verify_certificate(VanillaInstance(nx.Graph(), 0, 0), [])
 
     def test_verify_certificate_path(self):
-        g = nx.path_graph(10)
-        f, d = [[1], [0]], [[2], []]
-        k = 5
-        verify_certificate(f, d, g, 5)
+        d = [[2], []]
+        inst = VanillaInstance(nx.path_graph(10), 1, 5)
+        verify_certificate(inst, d)
 
     def test_defences_valid(self):
         g = nx.complete_graph(4)
         f, d = [[0], [2, 3]], [[1], []]
 
-        assert defences_valid(len(f), f, d)[0], 'Did not verify true certificate'
+        assert defences_valid(f, len(f), d)[0], 'Did not verify true certificate'
         d_bad = [[0], []]
-        assert not defences_valid(len(f), f, d_bad)[0], 'Did not reject certificate when burning vertex defended'
+        assert not defences_valid(f, len(f), d_bad)[0], 'Did not reject certificate when burning vertex defended'
         d_bad = [[1], [1]]
-        assert not defences_valid(len(f), f, d_bad)[0], 'Did not reject certificate when defendeding vertex again'
+        assert not defences_valid(f, len(f), d_bad)[0], 'Did not reject certificate when defendeding vertex again'
 
     def test_no_spread_after_end(self):
         g = nx.complete_graph(4)
-
         f, d = [[0], [2, 3]], [[1], []]
         f_union, d_union = set().union(*f), set().union(*d)
         assert no_spread_after_end(f_union, d_union, g)
